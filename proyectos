@@ -168,3 +168,95 @@ if __name__ == "__main__":
     print(f"\nMensaje final descifrado: {mensaje_recuperado}")
 
 ------------------------------------------------------------------------------------------------------------------------------------------
+Codigo Árboles y Compresión de Datos Algoritmo
+
+import heapq
+from collections import Counter
+
+def construir_arbol(texto):
+    """Une los dos nodos de menor frecuencia hasta quedar uno solo.
+    Una hoja es un símbolo (str); un nodo interno es una tupla (izq, der)."""
+    heap = [(f, i, c) for i, (c, f) in enumerate(Counter(texto).items())]
+    heapq.heapify(heap)
+    n = len(heap)  # Desempate para el heap
+    while len(heap) > 1:
+        f1, _, izq = heapq.heappop(heap)
+        f2, _, der = heapq.heappop(heap)
+        heapq.heappush(heap, (f1 + f2, n, (izq, der)))
+        n += 1
+    return heap[0][2]
+
+def generar_codigos(arbol, codigo="", tabla=None):
+    """Izquierda = '0', Derecha = '1'."""
+    if tabla is None:
+        tabla = {}
+    if isinstance(arbol, str):  # Hoja
+        tabla[arbol] = codigo or "0"
+    else:
+        generar_codigos(arbol[0], codigo + "0", tabla)
+        generar_codigos(arbol[1], codigo + "1", tabla)
+    return tabla
+
+def codificar(texto, tabla):
+    return "".join(tabla[c] for c in texto)
+
+def decodificar(bits, tabla):
+    inverso = {codigo: simbolo for simbolo, codigo in tabla.items()}
+    texto, actual = "", ""
+    for b in bits:
+        actual += b
+        if actual in inverso:
+            texto += inverso[actual]
+            actual = ""
+    return texto
+
+def main():
+    texto = input("Escribe un texto: ") or "ABRACADABRA"
+    frecuencias = Counter(texto)
+    tabla = generar_codigos(construir_arbol(texto))
+    
+    print("\nSímbolo     Frecuencia    Código")
+    for simbolo, codigo in sorted(tabla.items(), key=lambda x: len(x[1])):
+        print(f"{simbolo!r:<9} {frecuencias[simbolo]:<12} {codigo}")
+    
+    bits = codificar(texto, tabla) or ""
+    original = len(texto) * 8
+    print("\nTexto codificado:", bits)
+    print(f"Tamaño original: {original} bits")
+    print(f"Tamaño Huffman:  {len(bits)} bits")
+    if original > 0:
+        print(f"Reducción: {100 * (1 - len(bits) / original):.1f}%")
+    print("Texto decodificado:", decodificar(bits, tabla))
+
+if __name__ == "__main__":
+    main()
+
+------------------------------------------------------------------------------------------------------------------------------------------
+Codigo Lógica Proposicional y Álgebra Booleana
+
+from itertools import product
+
+def sirena_regla(A, M, P, V):
+    """Regla del enunciado: sistema armado y al menos dos sensores activos."""
+    return int(A == 1 and (M + P + V) >= 2)
+
+def sirena_canonica(A, M, P, V):
+    """Suma de minterminos: m11 + m13 + m14 + m15."""
+    return int((A and not M and P and V) or (A and M and not P and V) or
+               (A and M and P and not V) or (A and M and P and V))
+
+def sirena_simplificada(A, M, P, V):
+    """Resultado del mapa de Karnaugh: AMP + AMV + APV."""
+    return int((A and M and P) or (A and M and V) or (A and P and V))
+
+entradas = list(product([0, 1], repeat=4))          # las 16 combinaciones (A, M, P, V)
+
+minterminos = [8*A + 4*M + 2*P + V for A, M, P, V in entradas if sirena_simplificada(A, M, P, V)]
+equivalentes = all(sirena_regla(*e) == sirena_canonica(*e) == sirena_simplificada(*e) for e in entradas)
+desarmado_sin_sirena = all(sirena_simplificada(*e) == 0 for e in entradas if e[0] == 0)
+un_sensor_sin_sirena = all(sirena_simplificada(*e) == 0 for e in entradas if sum(e[1:]) <= 1)
+
+print("Minterminos con S=1:", minterminos)
+print("Regla = canonica = simplificada:", equivalentes)
+print("Si A=0 entonces S=0 (siempre):", desarmado_sin_sirena)
+print("Con a lo sumo un sensor activo, S=0:", un_sensor_sin_sirena)
